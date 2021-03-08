@@ -1,1 +1,0 @@
-# Reductions-to-SAT-Problem
