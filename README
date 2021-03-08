@@ -1,0 +1,383 @@
+********************************************************************************
+
+                    Analysis of Algorithms - Homework 2
+
+                              Gigel and Mafia
+
+                         Buf Sorina-Anamaria 321CA
+
+********************************************************************************
+
+    The purpose of this homework is to manoeuvre an investigation on Mafia
+families, having as ultimate goal to abolish the relations between the clan
+members through multiple arrests. In order to do so, the current problem will be
+reduced to the SAT problem, along the different stages of the mission, thus
+streamlining the investigation process by communicating with the Antic Oracle.
+Generally, transforming the current problem to SAT will mean creating a boolean
+formula, that will later be evaluated by the Oracle, determining if there exists
+an interpretation that satisfies the given conjunctive normal form, similar to
+other famous graph problems (e.g. reducing graph k-coloring to SAT).
+
+    ▶ Task 1 - SPY PLANTING
+
+        The first task of Gigel consists in planting a number of spies in the
+    Mafia families, so each family would get infiltrated, but two related clans
+    could not have the same spy.
+        In order to explain the logic behind the solution of this problem, in
+    the demonstration that is to follow, we will consider the next variables:
+
+        ◌ N - number of the Mafia families;
+        ◌ M - number of the connections between the families (undirected
+        relations);
+        ◌ K - the maximum number of spies that may be planted.
+
+        The reduction to SAT problem and consequently the boolean formula that
+    the current problem is transformed to was implemented in the function:
+
+        ◉ formulateOracleQuestion()
+
+        The conjunctive normal form will be represented by a number of clauses
+    and variables, component of the clauses formulated. The clausal normal form
+    is a conjunction of one or more clauses, while a clause is a disjunction of
+    literals, here represented by the variables that are to be declared. We will
+    consider the following:
+
+        ◌ number of variables = N * K, attributed as following:
+
+        variable: 1 → family no.1 may be infiltrated by spy no.1
+        variable: 2 → family no.2 may be infiltrated by spy no.1
+        variable: 3 → family no.3 may be infiltrated by spy no.1
+        .
+        .
+        .
+        variable: N → family no.N may be infiltrated by spy no.1
+        variable: N + 1 → family no.1 may be infiltrated by spy no.2
+        . . .
+
+        variable: N * (K - 1) + 1 → family no.1 may be infiltrated by spy no.K
+        variable: N * (K - 1) + 2 → family no.2 may be infiltrated by spy no.K
+        variable: N * (K - 1) + 3 → family no.3 may be infiltrated by spy no.K
+        .
+        .
+        .
+        variable: N * (K - 1) + N → family no.N may be infiltrated by spy no.K
+
+        ◌ number of clauses = N + M * K + N * K * (K - 1) / 2, thus explained:
+
+            The first series of clauses is represented by the first "for loop"
+            present in the current function, that displays the conditions that
+            must be respected regarding the spies distribution amongst the
+            families: each Mafia family must have at least one spy. Thus, there
+            will be "N" clauses, one clause related to each family, formed of a
+            number of "K" literals, represented by the corresponding variables
+            that illustrated the fact that in each family may be planted one of
+            the spies:
+
+                clause no.1 → 1 ∨ (N + 1) ∨ . . . ∨ (N * (K - 1) + 1)
+                clause no.2 → 2 ∨ (N + 2) ∨ . . . ∨ (N * (K - 1) + 2)
+                . . .
+
+                clause no.N → N ∨ (N + N) ∨ . . . ∨ (N * (K - 1) + N)
+
+                ● Time complexity of constructing the first clauses is
+                equivalent to parsing the first "for" of families and the second
+                one (used for variable construction): O(N * K).
+
+            The second series of clauses is represented by the second "for loop"
+            block, illustrating the strictness over spy distribution between
+            connected families: two related families can not have the same spy.
+            Thus, there will be "M * K" clauses; each pair of families must have
+            distinct spy, therefore the following clauses:
+                . . .
+                clause no.i → ¬family no.k with spy no.1 ∨ ¬family no.l with spy
+                            no.1
+                clause no.i+1 → ¬family no.k with spy no.2 ∨ ¬ family no.l with
+                            spy no.2
+                . . .
+                 ● Time complexity of constructing the second clauses is
+                 equivalent to parsing the first "for" of relations and the
+                 second one of spies: O(M * K).
+
+            The third series of clauses is represented by the third loop block,
+            responsible for creating the clauses regarding the distinction
+            distribution of infiltrates over a family: a family must not have
+            more than a spy. Thus, there will be "N * K * (K - 1) / 2" clauses,
+            as each pair of non-repetitive, distinct spies can not coexist in a
+            clan:
+
+                clause no.1 → ¬1 ∨ ¬(N + 1)
+                clause no.2 → ¬1 ∨ ¬(N * 2 + 1)
+                . . .
+                clause no.K-1 → ¬1 ∨ ¬(N * (K - 1) + 1)
+                clause no.K → ¬(N + 1) ∨ ¬(N * 2 + 1)
+                . . .
+                ● Time complexity of constructing the third clauses is
+                equivalent to parsing the first "for" of relations, the second
+                one of spies and the third one of remaining spies: O(M *
+                (1 + 2 + ... + (K - 1))) = O(N * K * (K - 1) / 2).
+
+    ⇒ Final complexity of SAT reduction: O(N * K + M * K + N * K * (K - 1) / 2).
+
+        The rest of the functions used to resolve the task are:
+
+        ◉ readProblemData() → responsible for populating the main attributes of
+    the problem and for storing the relations between the family in a O(M)
+    complexity;
+        ◉ decipherOracleAnswer() → extracts the answer of the oracle consisting
+    in a list of size "N * K" of variables, positive (the ones marked as TRUE)
+    and negative (the ones marked as FALSE), and converts the list into the
+    problem's answer in a O(N * K) time complexity;
+        ◉ writeAnswer() → writes the index of the spy assigned to each family
+    (O(N)).
+
+    ▶ Task 2 - EXTENDED FAMILIES INVESTIGATIONS
+
+        The second task of Gigel consists in determining the most influential
+    groups of families, represented by the extended ones, in which each two
+    families must be related.
+        In order to explain the logic behind the solution of this problem, in
+    the demonstration that is to follow, we will consider the next variables:
+
+        ◌ N - number of the Mafia families;
+        ◌ M - number of the connections between the families (undirected
+        relations);
+        ◌ K - size of the extended searched family;
+        ◌ X - number of non-edges = N * (N - 1) / 2 - M.
+
+        The reduction to SAT problem and consequently the boolean formula that
+    the current problem is transformed to was implemented in the function:
+
+        ◉ formulateOracleQuestion()
+
+        The conjunctive normal form will be represented by a number of clauses
+    and variables, component of the clauses formulated, similar to the previous
+    task. This algorithm can be seen as the generalized clique problem, where we
+    want to find a clique of size "K" in the graph of family relations.
+
+        ◌ number of variables = N * K, attributed as following:
+
+        variable: 1 → family no.1 may be node no.1 in the clique
+        variable: 2 → family no.2 may be node no.1 in the clique
+        variable: 3 → family no.3 may be node no.1 in the clique
+        .
+        .
+        .
+        variable: N → family no.N may be node no.1 in the clique
+        variable: N + 1 → family no.1 may be node no.2 in the clique
+        . . .
+
+        variable: N * (K - 1) + 1 → family no.1 may be node no.K in the clique
+        variable: N * (K - 1) + 2 → family no.2 may be node no.K in the clique
+        variable: N * (K - 1) + 3 → family no.3 may be node no.K in the clique
+        .
+        .
+        .
+        variable: N * (K - 1) + N → family no.N may be node no.K in the clique
+
+        ◌ number of clauses = K + K * N * (N - 1) / 2 + X * K * (K - 1) +
+        N * K * (K - 1) / 2, thus explained:
+
+            The first series of clauses is represented by the first "for loop"
+            present in the current function, that displays the conditions that
+            must be respected regarding the family distribution amongst the
+            clique: each node of the clique must be represented by a family.
+            There will be "K" clauses, one clause related to each node, formed
+            of a number of "N" literals, represented by the corresponding
+            variables:
+
+                clause no.1 → 1 ∨ 2 ∨ . . . ∨ N
+                clause no.2 → (N + 1) ∨ (N + 2) ∨ . . . ∨ (N + N)
+                . . .
+
+                clause no.K → (N * (K - 1) + 1) ∨ . . . ∨ (N * (K - 1) + N)
+
+                ● Time complexity of constructing the first clauses is
+                equivalent to parsing the first "for" of nodes and the second
+                one (used for variable construction): O(K * N).
+
+            The second series of clauses is represented by the second loop
+            block, responsible for creating the clauses regarding the
+            distinction distribution of families over a node: a node must
+            not be represented by more than a family. Thus, there will be
+            "K * N * (N - 1) / 2" clauses, as each pair of non-repetitive,
+            distinct families can not coexist as the same clique node:
+
+                 clause no.1 → ¬1 ∨ ¬2
+                 clause no.2 → ¬1 ∨ ¬3
+                 . . .
+                 clause no.N-1 → ¬1 ∨ ¬N
+                 clause no.N → ¬2 ∨ ¬3
+                 . . .
+                 ● Time complexity of constructing the second clauses is
+                 equivalent to parsing the first "for" of nodes, the second
+                 one of families and the third one of remaining families: O(K *
+                 (1 + 2 + ... + (N - 1))) = O(K * N * (N - 1) / 2).
+
+            The third series of clauses is represented by the third loop
+            block, responsible for creating the clauses regarding the
+            representation over a node, regarding the families: a family must
+            not represent more than a clique node. Thus, there will be
+            "N * K * (K - 1) / 2" clauses, as each pair of non-repetitive,
+            distinct nodes can not coexist as having the same family:
+
+                 clause no.1 → ¬1 ∨ ¬(N + 1)
+                 clause no.2 → ¬1 ∨ ¬(N * 2 + 1)
+                 . . .
+                 clause no.K-1 → ¬1 ∨ ¬(N * (K - 1) + 1)
+                 clause no.K → ¬(N + 1) ∨ ¬(N * 2 + 1)
+                 . . .
+                 ● Time complexity of constructing the third clauses is
+                 equivalent to parsing the first "for" of families, the second
+                 one of nodes and the third one of remaining nodes: O(N *
+                 (1 + 2 + ... + (K - 1))) = O(N * K * (K - 1) / 2).
+
+            The last series of clauses is defined in the final "for" segment,
+            aiming to create clauses that illustrate the fact that two families
+            that are unconnected can not coexist in the searched clique.
+            Therefore, we write "X * K (K - 1)" clauses, as two families with no
+            direct relation between them can not represent different nodes in
+            the clique:
+                 . . .
+                 clause no.i → ¬family no.k as node no.1 ∨ ¬family no.l as node
+                             no.2
+                 clause no.i+1 → ¬family no.k as node no.1 ∨ ¬family no.l as
+                                 node spy no.3
+                 . . .
+                 ● Time complexity of constructing the final clauses is
+                 equivalent to parsing the first two "for" of relations and the
+                 second ones of nodes: O(N^2 * K^2).
+
+    ⇒ Final complexity of SAT reduction: O(K * N + K * N * (N - 1) / 2
+    + N * K * (K - 1) / 2 + N^2 * K^2).
+
+        The rest of the functions used to resolve the task are:
+
+        ◉ readProblemData() → responsible for populating the main attributes of
+    the problem and for storing the relations between the family in a
+    O(N + M + 1) complexity;
+        ◉ decipherOracleAnswer() → extracts the answer of the oracle consisting
+    in a list of size "N * K" of variables, positive (the ones marked as TRUE)
+    and negative (the ones marked as FALSE), and converts the list into the
+    problem's answer in a O(N * K) time complexity;
+        ◉ writeAnswer() → writes the index of the family assigned to each node
+    of the clique (O(K)).
+
+    ▶ Task 3 - MAFIA ARRESTS
+
+        Final task of Gigel consists in arresting the minimum number of families
+    in order to disconnect all the clans and, consequently, destroy the Mafia
+    grid.
+        In order to explain the logic behind the solution of this problem, in
+    the demonstration that is to follow, we will consider the next variables:
+
+        ◌ N - number of the Mafia families;
+        ◌ M - number of the connections between the families (undirected
+        relations);
+        ◌ K - size of the extended searched family;
+        ◌ X - number of non-edges = N * (N - 1) / 2 - M.
+
+        As a way to resolve this problem, we will use the previously implemented
+    solution from task 2, requesting multiple answers from the Oracle. The main
+    idea of the programme is to try finding the maximal clique in the
+    complementary graph of relations between Mafia families, as the minimum
+    number of arrests that need to be undertaken will be consisted of the
+    families that are not found in the answer requested by the Antic Oracle.
+        The utility functions used for resolving this task are:
+
+        ◉ readProblemData() → responsible for populating the main attributes of
+    the problem and for storing the relations between the families in the list
+    of adjacency lists, while doing the same for the complementary graph, in a
+    O(N + M + 1 + N^2) time complexity;
+        ◉ reduceToTask2() → creates the input file of the Task 2 with the
+    attributes of the current problem transferred to its complement;
+        ◉ extractAnswerFromTask2() → extracts the answer given by the call of
+    Task2, consisting in the maximal clique of size "K" present in the
+    complementary graph;
+        ◉ writeAnswer() → writes the minimal arrests needed to be performed.
+
+        The main method of the programme, responsible for controlling the flow
+    of multiple requests to the Oracle if defined as it follows:
+
+        ◉ solve()
+
+        In order to find the maximal clique in the complementary graph, by
+    multiply requesting help from the Oracle, we need to set up the starting
+    value of "K", considered as maximum, that is going to decrease in the
+    formulated problem until a valid solution is discovered.
+        Taking into account that, in a complete graph, the maximal amount of
+    edges is "n * (n - 1) / 2" (where "n" is the number of nodes), we can set
+    the superior limit of "K" by considering that all the edges given in the
+    problem are part of the same complete subgraph:
+
+                            ⇒ K * (K - 1) = 2 * X
+                              ⇒ K^2 - K = 2 * X
+                         ⇒ (K - 0.5)^2 = 2 * X + 0.25
+                        ⇒ K - 0.5 = sqrt(2 * X + 0.25)
+                  ⇒ K = 0.5 + sqrt(2 * X + 0.25) (final formula)
+
+        Considering the complexity previously calculated for resolving task 2,
+    we can agree that the complexity of this method will consist in the one
+    already set at the second stage of the mission, multiplied by the difference
+    between the optimized "K" discovered on the basis of the number of non-edges
+    and the actual size of a maximal clique that is to be found.
+
+    ▶ Task 4 - MAFIA ARRESTS (BONUS)
+
+        In this special part of the mission, we are trying to reduce the
+    questions addressed to the Oracle to a single one by transforming the input
+    format to the Weighted Partial Max-SAT Input format. Therefore, the main
+    functions will be identical to the Task 2, transferring the logic of the
+    problem to this task, but applied to the complementary graph of relations,
+    in the same way as we managed Task 3. Therefore, we can say that this task
+    will consist in a combination between the second and the third one,
+    modified in such a way as we get the correct answer through one Oracle call.
+        In Task 2, we considered four types of clauses, now applied on the
+    complementary problem (we consider the notations from previous tasks):
+
+            ◌ "K" clauses representing the fact that a node of the clique must
+        be represented by one family;
+            ◌ "K * N * (N - 1) / 2" clauses corresponding to the fact that a
+        node of a clique can not be represented by more than a family;
+            ◌ "N * K * (K - 1) / 2" clauses corresponding to the fact that a
+        family can not represent more than a node in the clique;
+            ◌ "M * K * (K - 1)" clauses representing the fact that for every
+        two families that form a relation, they can not both be present in the
+        complementary clique.
+
+        In the Weighted Partial Max-SAT Input format, it must be defined the
+    weight value of hard clauses (the obligatory ones), and the weight of soft
+    clauses (the optional ones), that will precede every clause in the input
+    oracle file.
+        In order to find the maximal possible clique, we will consider all the
+    clauses as being hard, except the first set, that defined the existence of
+    the respective nodes. Also, as the minimal size of a clique is considered as
+    two, we will define two of the first clauses as obligatory to be fulfilled.
+        I considered the soft clauses, with their respective weights, thus:
+
+            clause no.3 → 1: (N * 2 + 1) ∨ (N * 2 + 2) ∨ . . . ∨ (N * 2 + N)
+            clause no.4 → 2 : (N * 3 + 1) ∨ (N * 3 + 2) ∨ . . . ∨ (N * 3 + N)
+            clause no.5 → 4 : (N * 4 + 1) ∨ (N * 4 + 2) ∨ . . . ∨ (N * 4 + N)
+            . . .
+
+            clause no.K → 2^(K-3): (N * (K - 1) + 1) ∨ . . . ∨ (N * (K - 1) + N)
+
+        ⇒ hard clauses weight = sum of all the weights of soft clauses + 1
+        ⇒ hard clauses weight = 1 + 2 + 2^2 + ... + 2^(K - 3) + 1
+        ⇒ hard clauses weight = 2^(K - 2) - 1 + 1
+        ⇒ hard clauses weight = 2^(K - 2)
+
+        Therefore, we created the respective clauses of this problem. A final
+    aspect to be reminded is the chosen value of "K", as I tried to optimize the
+    previous value set for the size of the possible maximal clique:
+
+        ⇒ before: K = 0.5 + sqrt(2 * X + 0.25)
+
+         A method to reduce the size of "K" was trying to find the maximal
+    degree of a family in a complete graph by verifying the corresponding number
+    of relations of their neighbours, which should be equal or greater than the
+    initial family's.
+
+        For more details related to effective implementation, verify the
+    comments in the code.
+
+********************************************************************************
